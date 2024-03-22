@@ -1,0 +1,14 @@
+name: discord-bot
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - discord.py
+      - python-dotenv
+      - chardet
+      - pandas
+      - openpyxl
+
