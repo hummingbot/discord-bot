@@ -7,16 +7,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+START_DATE = '2024-03-01'
+END_DATE = '2024-03-28'
+WHITELISTED_USERS = {'david_alvero', 'fengtality'}  # Set of user names
+WHITELISTED_REACTIONS = {'1️⃣', '2️⃣', "3️⃣"}  # Set of allowed reactions
+excel_path = 'data/discord_messages.xlsx'
+
+
 intents = discord.Intents.default()
 intents.messages = True
 client = discord.Client(intents=intents)
-CHANNEL_IDS = [int(cid) for cid in os.environ.get('CHANNEL_IDS', "").split(',')]  # List of channel IDs
 TOKEN = os.environ.get('DISCORD_TOKEN')
-START_DATE = '2024-03-01'
-END_DATE = '2024-03-22'
-WHITELISTED_USERS = {'david_alvero'}  # Set of user names
-WHITELISTED_REACTIONS = {'1️⃣', '2️⃣', "3️⃣"}  # Set of allowed reactions
-excel_path = 'data/discord_messages.xlsx'
+CHANNEL_IDS = [int(cid) for cid in os.environ.get('CHANNEL_IDS', "").split(',')]  # List of channel IDs
 
 
 async def fetch_messages(channel_id):
