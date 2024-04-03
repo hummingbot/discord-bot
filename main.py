@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import pandas as pd
 import discord
@@ -20,42 +21,45 @@ client = discord.Client(intents=intents)
 TOKEN = os.environ.get('DISCORD_TOKEN')
 CHANNEL_IDS = [int(cid) for cid in os.environ.get('CHANNEL_IDS', "").split(',')]  # List of channel IDs
 
+logging.basicConfig(level=logging.INFO)
+
 
 async def fetch_messages(channel_id):
     messages_info = []
+    total_messages = 0
     target_channel = client.get_channel(channel_id)
+    start_date = datetime.strptime(START_DATE, '%Y-%m-%d')
+    end_date = datetime.strptime(END_DATE, '%Y-%m-%d')
     if target_channel:
-        start_date = datetime.strptime(START_DATE, '%Y-%m-%d').date()
-        end_date = datetime.strptime(END_DATE, '%Y-%m-%d').date()
-        async for msg in target_channel.history(limit=1000):
-            message_date = msg.created_at.date()
-            if start_date <= message_date <= end_date:
+        after_date = start_date
+        before_date = start_date + pd.Timedelta(days=1)
+        while after_date != end_date:
+            logging.info(f"Fetching messages from channel {target_channel.name}")
+            logging.info(f"After date: {after_date} - Before date: {before_date}")
+            async for msg in target_channel.history(limit=1000, before=before_date, after=after_date):
+                total_messages += 1
+                message_url = f"https://discord.com/channels/{msg.guild.id}/{channel_id}/{msg.id}"
+                users_reacted = set()
+                reactions = set()
                 for reaction in msg.reactions:
                     if str(reaction.emoji) in WHITELISTED_REACTIONS:
                         async for user in reaction.users():
-                            if user.name in WHITELISTED_USERS:
-                                message_url = f"https://discord.com/channels/{msg.guild.id}/{channel_id}/{msg.id}"
-                                messages_info.append({
-                                    'id': msg.id,
-                                    'author': msg.author.name,
-                                    'message': msg.content,
-                                    'reaction': str(reaction),
-                                    'user': user.name,
-                                    'url': message_url
-                                })
-                                break
-                    else:
-                        message_url = f"https://discord.com/channels/{msg.guild.id}/{channel_id}/{msg.id}"
-                        messages_info.append({
-                            'id': msg.id,
-                            'author': msg.author.name,
-                            'message': msg.content,
-                            'reaction': "",
-                            'user': "",
-                            'url': message_url
-                        })
-    return messages_info
+                            users_reacted.add(user.name)
+                            reactions.add(str(reaction.emoji))
 
+                messages_info.append({
+                    'id': msg.id,
+                    'channel': target_channel.name,
+                    'author': msg.author.name,
+                    'message': msg.content,
+                    'reaction': reactions if len(reactions) > 0 else None,
+                    'user': users_reacted if len(users_reacted) > 0 else None,
+                    'url': message_url
+                })
+            after_date = before_date
+            before_date = before_date + pd.Timedelta(days=1)
+    logging.info(f"Total messages fetched: {total_messages} for channel {target_channel.name}")
+    return messages_info
 
 
 def read_existing_data(path):
