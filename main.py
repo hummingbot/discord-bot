@@ -8,13 +8,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-START_DATE = '2024-04-09'
-END_DATE = '2024-04-17'
-WHITELISTED_USERS = {'david_alvero', 'fengtality'}
+# Configuration variables
+START_DATE = '2024-03-01'
+END_DATE = '2024-04-05'
+WHITELISTED_USERS = {'david_alvero', 'fengtality', 'carlitohummingbotfoundation', 'hbminerfan', 'w0jak'}
 WHITELISTED_REACTIONS = {'1️⃣', '2️⃣', '3️⃣'}
 REACTION_POINTS = {'1️⃣': 1, '2️⃣': 2, '3️⃣': 3}
 excel_path = 'data/discord_messages.xlsx'
 
+# Define the start date of week #71
+WEEK_71_START_DATE = datetime.strptime('2024-04-16', '%Y-%m-%d')
+
+# Discord bot setup
 intents = discord.Intents.default()
 intents.messages = True
 client = discord.Client(intents=intents)
@@ -40,11 +45,16 @@ async def fetch_messages(channel_id):
                         evaluator_names = [user.name for user in users if user.name in WHITELISTED_USERS]
                         if evaluator_names:
                             points = sum(REACTION_POINTS[str(reaction.emoji)] for user in users if user.name in WHITELISTED_USERS)
+                            message_date = msg.created_at.replace(tzinfo=None)  # Make message_date offset-naive
+                            # Calculate week number
+                            days_diff = (message_date - WEEK_71_START_DATE).days
+                            week_no = 71 + days_diff // 7
                             messages_info.append({
                                 'id': msg.id,
                                 'date': msg.created_at.strftime('%d-%b-%y'),
+                                'Week No.': week_no,
                                 'channel': target_channel.name,
-                                'author': msg.author.name,
+                                'Participants Discord Handle': msg.author.name,
                                 'message': msg.content,
                                 'reaction': str(reaction.emoji),
                                 'points': points,
